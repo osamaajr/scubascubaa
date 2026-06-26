@@ -3,46 +3,14 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ScubaScubaa</title>
+    <title>ScubaScubaa Camera</title>
     <link rel="stylesheet" href="app.css">
   </head>
   <body>
-    <main class="app-shell">
-      <header class="top-bar">
-        <div>
-          <p class="eyebrow">ScubaScubaa</p>
-          <h1>Facecam</h1>
-        </div>
-
-        <p id="statusText" class="status-text">Ready.</p>
-
-        <div class="button-row">
-          <button id="startButton" type="button">Restart</button>
-          <button id="stopButton" type="button" class="secondary" disabled>Stop</button>
-        </div>
-      </header>
-
-      <section class="stage" aria-label="Camera gesture view">
-        <div id="videoFrame" class="video-frame">
-          <video id="camera" class="camera" autoplay muted playsinline></video>
-          <canvas id="overlay" class="overlay"></canvas>
-
-          <div id="emptyState" class="empty-state">
-            <strong>Starting camera</strong>
-            <span>Allow access, then hold one hand near your nose and wave the other side to side.</span>
-          </div>
-
-          <div id="hintText" class="hint-text" aria-live="polite" hidden></div>
-
-          <div class="signal-strip" aria-label="Gesture signals">
-            <span>Face: <strong id="faceSignal">Waiting</strong></span>
-            <span>Hands: <strong id="handSignal">Waiting</strong></span>
-            <span>Gesture: <strong id="gestureSignal">Idle</strong></span>
-            <span>Mode: <strong id="modeSignal">Off</strong></span>
-          </div>
-        </div>
-      </section>
-
+    <main class="camera-shell">
+      <video id="camera" class="camera" autoplay muted playsinline></video>
+      <canvas id="overlay" class="overlay"></canvas>
+      <div id="messageText" class="message-text" aria-live="polite">Starting camera...</div>
       <audio id="gatoAudio" src="../audio.mp3" preload="auto"></audio>
     </main>
 

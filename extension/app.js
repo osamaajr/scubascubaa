@@ -10,23 +10,12 @@ const SIDEWAYS_RATIO = 0.8;
 const WAVE_HISTORY_FRAMES = 12;
 const STOP_DELAY_MS = 2500;
 const HINT_DELAY_MS = 7000;
-const GATO_WINDOW_WIDTH = 520;
-const GATO_WINDOW_HEIGHT = 360;
 
-const videoFrame = document.querySelector("#videoFrame");
 const camera = document.querySelector("#camera");
 const overlay = document.querySelector("#overlay");
 const ctx = overlay.getContext("2d");
-const startButton = document.querySelector("#startButton");
-const stopButton = document.querySelector("#stopButton");
-const statusText = document.querySelector("#statusText");
-const emptyState = document.querySelector("#emptyState");
-const hintText = document.querySelector("#hintText");
+const messageText = document.querySelector("#messageText");
 const gatoAudio = document.querySelector("#gatoAudio");
-const faceSignal = document.querySelector("#faceSignal");
-const handSignal = document.querySelector("#handSignal");
-const gestureSignal = document.querySelector("#gestureSignal");
-const modeSignal = document.querySelector("#modeSignal");
 
 let stream = null;
 let animationId = null;
@@ -37,8 +26,6 @@ let lastVideoTime = -1;
 let lastDanceTime = 0;
 let waitingSince = 0;
 let gatoIsActive = false;
-let gatoWindowId = null;
-let gatoWindowOpening = false;
 let waveHistory = [];
 
 const HAND_CONNECTIONS = [
@@ -50,31 +37,17 @@ const HAND_CONNECTIONS = [
   [0, 17]
 ];
 
-startButton.addEventListener("click", start);
-stopButton.addEventListener("click", stop);
 window.addEventListener("beforeunload", stop);
 
-chrome.windows.onRemoved.addListener((windowId) => {
-  if (windowId !== gatoWindowId) {
-    return;
-  }
-
-  gatoWindowId = null;
-  gatoWindowOpening = false;
-  gatoIsActive = false;
-  stopAudio();
-  setSignal(modeSignal, "Off");
-});
+start();
 
 async function start() {
-  startButton.disabled = true;
-  statusText.textContent = "Loading hand and face models...";
+  showMessage("Loading...");
 
   try {
     await loadModels();
-    await unlockMedia();
+    await unlockAudio();
 
-    statusText.textContent = "Requesting camera permission...";
     stream = await navigator.mediaDevices.getUserMedia({
       video: {
         width: { ideal: 1280 },
@@ -88,17 +61,12 @@ async function start() {
     await camera.play();
     syncCanvasToVideo();
 
-    emptyState.classList.add("is-hidden");
-    hideHint();
-    stopButton.disabled = false;
     waitingSince = performance.now();
-    statusText.textContent = "Watching for the gesture.";
+    showMessage("Hold one hand near your nose, then wave the other.", false, 2400);
     animationId = requestAnimationFrame(processFrame);
   } catch (error) {
     console.error(error);
-    statusText.textContent = makeErrorMessage(error);
-    startButton.disabled = false;
-    stopButton.disabled = true;
+    showMessage(makeErrorMessage(error));
     stopStream();
   }
 }
@@ -112,20 +80,10 @@ function stop() {
   stopGatoMode();
   stopStream();
   clearCanvas();
-  hideHint();
   waveHistory = [];
   lastVideoTime = -1;
   lastDanceTime = 0;
   waitingSince = 0;
-
-  startButton.disabled = false;
-  stopButton.disabled = true;
-  emptyState.classList.remove("is-hidden");
-  statusText.textContent = "Stopped.";
-  setSignal(faceSignal, "Waiting");
-  setSignal(handSignal, "Waiting");
-  setSignal(gestureSignal, "Idle");
-  setSignal(modeSignal, "Off");
 }
 
 async function loadModels() {
@@ -163,7 +121,7 @@ async function loadModels() {
   return loadPromise;
 }
 
-async function unlockMedia() {
+async function unlockAudio() {
   try {
     gatoAudio.muted = true;
     await gatoAudio.play();
@@ -189,7 +147,7 @@ function processFrame(timestamp) {
     const state = readGestureState(handResults, faceResults, timestamp);
 
     drawResults(handResults, state.nosePoint);
-    updateSignals(state, timestamp);
+    updateGuidance(state, timestamp);
 
     if (state.danceIsRecent) {
       startGatoMode();
@@ -264,7 +222,7 @@ function drawResults(handResults, nosePoint) {
   for (const landmarks of handResults.landmarks ?? []) {
     const points = landmarks.map(toCanvasPoint);
 
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.84)";
     ctx.lineWidth = 3;
     ctx.lineCap = "round";
 
@@ -274,39 +232,20 @@ function drawResults(handResults, nosePoint) {
 
     ctx.fillStyle = "#ff6b4a";
     for (const point of points) {
-      drawCircle(point, 5);
+      drawCircle(point, 4);
     }
   }
 
   if (nosePoint) {
     ctx.fillStyle = "#f7c948";
-    drawCircle(nosePoint, 8);
+    drawCircle(nosePoint, 7);
   }
 }
 
-function updateSignals(state, now) {
-  setSignal(faceSignal, state.faceCount ? "Seen" : "Missing", state.faceCount ? "is-active" : "");
-  setSignal(handSignal, String(state.handCount), state.handCount >= 2 ? "is-active" : "");
-
-  if (state.sidewaysWave) {
-    setSignal(gestureSignal, "Wave", "is-hot");
-    statusText.textContent = "Gesture detected. Opening GATO MODE in a mini window.";
-  } else if (state.hasNoseHand) {
-    setSignal(gestureSignal, "Hold + wave", "is-active");
-    statusText.textContent = "Keep waving the free hand side to side.";
-  } else {
-    setSignal(gestureSignal, "Idle");
-    statusText.textContent = "Hold one hand near your nose, then wave the other.";
-  }
-
-  setSignal(modeSignal, state.danceIsRecent ? "GATO" : "Off", state.danceIsRecent ? "is-hot" : "");
-  updateHint(state, now);
-}
-
-function updateHint(state, now) {
+function updateGuidance(state, now) {
   if (state.danceIsRecent) {
     waitingSince = now;
-    hideHint();
+    showMessage("GATO MODE", true);
     return;
   }
 
@@ -315,105 +254,57 @@ function updateHint(state, now) {
   }
 
   if (now - waitingSince < HINT_DELAY_MS) {
-    hideHint();
     return;
   }
 
-  hintText.hidden = false;
-  hintText.textContent = getHint(state);
+  showMessage(getHint(state));
 }
 
 function getHint(state) {
   if (!state.faceCount) {
-    return "Hint: move your face into the camera view first.";
+    return "Hint: move your face into view.";
   }
 
   if (state.handCount < 2) {
-    return "Hint: show both hands to the camera.";
+    return "Hint: show both hands.";
   }
 
   if (!state.hasNoseHand) {
-    return "Hint: keep one hand close to your nose.";
+    return "Hint: keep one hand near your nose.";
   }
 
-  return "Hint: keep that hand near your nose and wave the other hand wider, side to side.";
-}
-
-function hideHint() {
-  hintText.hidden = true;
-  hintText.textContent = "";
+  return "Hint: wave the other hand wider, side to side.";
 }
 
 function startGatoMode() {
-  if (!gatoIsActive) {
-    gatoIsActive = true;
-    gatoAudio.currentTime = 0;
-    gatoAudio.play().catch(() => {
-      statusText.textContent = "GATO MODE is active. Click the page once if Chrome blocks sound.";
-    });
+  if (gatoIsActive) {
+    return;
   }
 
-  if (gatoWindowId === null && !gatoWindowOpening) {
-    openGatoWindow();
-  }
+  gatoIsActive = true;
+  postGatoMessage("gato:start");
+  gatoAudio.currentTime = 0;
+  gatoAudio.play().catch(() => {
+    showMessage("GATO MODE. Click once if Chrome blocks sound.", true);
+  });
 }
 
 function stopGatoMode() {
-  if (!gatoIsActive && gatoWindowId === null && !gatoWindowOpening) {
+  if (!gatoIsActive) {
     return;
   }
 
   gatoIsActive = false;
-  stopAudio();
-  closeGatoWindow();
-}
-
-function openGatoWindow() {
-  gatoWindowOpening = true;
-
-  chrome.windows.create({
-    url: chrome.runtime.getURL("extension/gato.html"),
-    type: "popup",
-    width: GATO_WINDOW_WIDTH,
-    height: GATO_WINDOW_HEIGHT,
-    focused: false
-  }, (createdWindow) => {
-    gatoWindowOpening = false;
-
-    if (chrome.runtime.lastError) {
-      statusText.textContent = "Gesture detected, but Chrome could not open the GATO mini window.";
-      return;
-    }
-
-    if (!gatoIsActive) {
-      chrome.windows.remove(createdWindow.id, () => {
-        void chrome.runtime.lastError;
-      });
-      return;
-    }
-
-    gatoWindowId = createdWindow.id;
-  });
-}
-
-function closeGatoWindow() {
-  if (gatoWindowId === null) {
-    gatoWindowOpening = false;
-    return;
-  }
-
-  const windowId = gatoWindowId;
-  gatoWindowId = null;
-  gatoWindowOpening = false;
-
-  chrome.windows.remove(windowId, () => {
-    void chrome.runtime.lastError;
-  });
-}
-
-function stopAudio() {
+  postGatoMessage("gato:stop");
   gatoAudio.pause();
   gatoAudio.currentTime = 0;
+}
+
+function postGatoMessage(type) {
+  window.parent.postMessage({
+    source: "scubascubaa",
+    type
+  }, "*");
 }
 
 function syncCanvasToVideo() {
@@ -427,7 +318,6 @@ function syncCanvasToVideo() {
   if (overlay.width !== width || overlay.height !== height) {
     overlay.width = width;
     overlay.height = height;
-    videoFrame.style.setProperty("--video-aspect", String(width / height));
   }
 }
 
@@ -477,21 +367,28 @@ function stopStream() {
   camera.srcObject = null;
 }
 
-function setSignal(element, text, className = "") {
-  element.textContent = text;
-  element.className = className;
+function showMessage(message, hot = false, timeout = 0) {
+  messageText.textContent = message;
+  messageText.classList.toggle("is-hot", hot);
+  messageText.classList.remove("is-hidden");
+
+  if (timeout) {
+    setTimeout(() => {
+      if (messageText.textContent === message) {
+        messageText.classList.add("is-hidden");
+      }
+    }, timeout);
+  }
 }
 
 function makeErrorMessage(error) {
   if (error?.name === "NotAllowedError") {
-    return "Camera permission was blocked. Allow camera access for this extension and try again.";
+    return "Camera blocked. Allow camera access for ScubaScubaa.";
   }
 
   if (error?.name === "NotFoundError") {
-    return "No camera was found.";
+    return "No camera found.";
   }
 
-  return "Could not start ScubaScubaa. Check the extension console for details.";
+  return "Could not start camera.";
 }
-
-start();

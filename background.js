@@ -1,26 +1,37 @@
-configureSidePanel();
-
-chrome.runtime.onInstalled.addListener(configureSidePanel);
-chrome.runtime.onStartup.addListener(configureSidePanel);
-
 chrome.action.onClicked.addListener(async (tab) => {
+  if (!tab.id) {
+    return;
+  }
+
   try {
-    if (tab.id) {
-      await chrome.sidePanel.open({ tabId: tab.id });
-    } else if (tab.windowId) {
-      await chrome.sidePanel.open({ windowId: tab.windowId });
-    }
+    await chrome.scripting.insertCSS({
+      target: { tabId: tab.id },
+      files: ["content.css"]
+    });
+
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ["content.js"]
+    });
   } catch (error) {
-    console.warn("Could not open ScubaScubaa side panel.", error);
+    console.warn("Could not open ScubaScubaa on this tab.", error);
+    showUnsupportedPageBadge(tab.id);
   }
 });
 
-async function configureSidePanel() {
-  try {
-    await chrome.sidePanel.setPanelBehavior({
-      openPanelOnActionClick: true
+function showUnsupportedPageBadge(tabId) {
+  chrome.action.setBadgeBackgroundColor({ tabId, color: "#ff6b4a" });
+  chrome.action.setBadgeText({ tabId, text: "!" });
+  chrome.action.setTitle({
+    tabId,
+    title: "ScubaScubaa works on normal webpages, not Chrome internal pages."
+  });
+
+  setTimeout(() => {
+    chrome.action.setBadgeText({ tabId, text: "" });
+    chrome.action.setTitle({
+      tabId,
+      title: "Toggle ScubaScubaa overlay"
     });
-  } catch (error) {
-    console.warn("Could not configure ScubaScubaa side panel.", error);
-  }
+  }, 2600);
 }
