@@ -6,24 +6,16 @@
   "action": {
     "default_title": "Toggle ScubaScubaa camera"
   },
+  "side_panel": {
+    "default_path": "extension/app.html"
+  },
   "background": {
     "service_worker": "background.js"
   },
   "permissions": [
-    "activeTab",
-    "scripting"
+    "sidePanel"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "extension/app.html"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ]
+  }
 }

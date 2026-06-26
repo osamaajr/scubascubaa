@@ -8,19 +8,18 @@ Chrome extension webcam experiment: hold one hand near your nose and wave the ot
 2. Turn on **Developer mode**.
 3. Click **Load unpacked**.
 4. Select this project folder.
-5. Open any normal website tab.
-6. Click the ScubaScubaa extension icon.
-7. Allow camera access, then do the gesture.
+5. Click the ScubaScubaa extension icon.
+6. Allow camera access in the side panel, then do the gesture.
 
-The camera opens as an overlay on the current tab, not a separate app tab. Chrome does not allow this on internal pages like `chrome://extensions`, so test it on a regular website. When the gesture is detected, GATO MODE opens in a small separate Chrome window and plays the video without cropping. If no gesture is detected after 7 seconds, the camera overlay shows a hint.
+The camera opens in Chrome's side panel, so it stays in the same browser window without creating a new tab. When the gesture is detected, GATO MODE opens in a small separate Chrome window and plays the video without cropping. If no gesture is detected after 7 seconds, the side panel shows a hint.
 
 The extension runs fully from local files. The MediaPipe browser runtime and models are vendored in `vendor/`.
 
 ## Files
 
 - `manifest.json` defines the Chrome extension.
-- `content.js` injects the camera overlay into the current tab.
-- `extension/app.html` is the embedded camera app.
+- `background.js` opens the side-panel facecam.
+- `extension/app.html` is the camera app.
 - `extension/app.js` contains the browser gesture detector.
 - `gato.mp4` and `audio.mp3` are used for GATO MODE.
 - `scubacat_final.py` is the original Python prototype.
