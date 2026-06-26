@@ -8,58 +8,42 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="stage" aria-label="Camera gesture view">
-        <div class="video-frame">
-          <video id="camera" class="camera" autoplay muted playsinline></video>
-          <canvas id="overlay" class="overlay"></canvas>
-
-          <div id="emptyState" class="empty-state">
-            <strong>Ready for GATO MODE</strong>
-            <span>Start the camera, hold one hand near your nose, and wave the other side to side.</span>
-          </div>
-
-          <div id="gatoMode" class="gato-mode" aria-live="polite" aria-hidden="true">
-            <video id="gatoVideo" class="gato-video" src="../gato.mp4" loop playsinline></video>
-            <div class="gato-label">GATO MODE</div>
-          </div>
-        </div>
-      </section>
-
-      <aside class="controls" aria-label="ScubaScubaa controls">
+      <header class="top-bar">
         <div>
-          <p class="eyebrow">Chrome extension</p>
-          <h1>ScubaScubaa</h1>
-          <p class="summary">A browser-native port of the webcam gesture detector.</p>
+          <p class="eyebrow">ScubaScubaa</p>
+          <h1>Camera</h1>
         </div>
+
+        <p id="statusText" class="status-text">Ready.</p>
 
         <div class="button-row">
           <button id="startButton" type="button">Start camera</button>
           <button id="stopButton" type="button" class="secondary" disabled>Stop</button>
         </div>
+      </header>
 
-        <p id="statusText" class="status-text">Ready.</p>
+      <section class="stage" aria-label="Camera gesture view">
+        <div id="videoFrame" class="video-frame">
+          <video id="camera" class="camera" autoplay muted playsinline></video>
+          <canvas id="overlay" class="overlay"></canvas>
 
-        <dl class="signals">
-          <div>
-            <dt>Face</dt>
-            <dd id="faceSignal">Waiting</dd>
+          <div id="emptyState" class="empty-state">
+            <strong>Start the camera</strong>
+            <span>Then hold one hand near your nose and wave the other side to side.</span>
           </div>
-          <div>
-            <dt>Hands</dt>
-            <dd id="handSignal">Waiting</dd>
-          </div>
-          <div>
-            <dt>Gesture</dt>
-            <dd id="gestureSignal">Idle</dd>
-          </div>
-          <div>
-            <dt>Mode</dt>
-            <dd id="modeSignal">Off</dd>
-          </div>
-        </dl>
 
-        <audio id="gatoAudio" src="../audio.mp3" preload="auto"></audio>
-      </aside>
+          <div id="hintText" class="hint-text" aria-live="polite" hidden></div>
+
+          <div class="signal-strip" aria-label="Gesture signals">
+            <span>Face: <strong id="faceSignal">Waiting</strong></span>
+            <span>Hands: <strong id="handSignal">Waiting</strong></span>
+            <span>Gesture: <strong id="gestureSignal">Idle</strong></span>
+            <span>Mode: <strong id="modeSignal">Off</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <audio id="gatoAudio" src="../audio.mp3" preload="auto"></audio>
     </main>
 
     <script type="module" src="app.js"></script>

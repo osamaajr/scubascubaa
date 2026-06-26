@@ -8,8 +8,12 @@ const HOLD_NOSE_DISTANCE_RATIO = 0.32;
 const WAVE_DISTANCE_RATIO = 0.1;
 const SIDEWAYS_RATIO = 0.8;
 const WAVE_HISTORY_FRAMES = 12;
-const STOP_DELAY_MS = 1000 / 3;
+const STOP_DELAY_MS = 2500;
+const HINT_DELAY_MS = 7000;
+const GATO_WINDOW_WIDTH = 520;
+const GATO_WINDOW_HEIGHT = 360;
 
+const videoFrame = document.querySelector("#videoFrame");
 const camera = document.querySelector("#camera");
 const overlay = document.querySelector("#overlay");
 const ctx = overlay.getContext("2d");
@@ -17,8 +21,7 @@ const startButton = document.querySelector("#startButton");
 const stopButton = document.querySelector("#stopButton");
 const statusText = document.querySelector("#statusText");
 const emptyState = document.querySelector("#emptyState");
-const gatoMode = document.querySelector("#gatoMode");
-const gatoVideo = document.querySelector("#gatoVideo");
+const hintText = document.querySelector("#hintText");
 const gatoAudio = document.querySelector("#gatoAudio");
 const faceSignal = document.querySelector("#faceSignal");
 const handSignal = document.querySelector("#handSignal");
@@ -32,7 +35,10 @@ let faceLandmarker = null;
 let loadPromise = null;
 let lastVideoTime = -1;
 let lastDanceTime = 0;
+let waitingSince = 0;
 let gatoIsActive = false;
+let gatoWindowId = null;
+let gatoWindowOpening = false;
 let waveHistory = [];
 
 const HAND_CONNECTIONS = [
@@ -48,6 +54,18 @@ startButton.addEventListener("click", start);
 stopButton.addEventListener("click", stop);
 window.addEventListener("beforeunload", stop);
 
+chrome.windows.onRemoved.addListener((windowId) => {
+  if (windowId !== gatoWindowId) {
+    return;
+  }
+
+  gatoWindowId = null;
+  gatoWindowOpening = false;
+  gatoIsActive = false;
+  stopAudio();
+  setSignal(modeSignal, "Off");
+});
+
 async function start() {
   startButton.disabled = true;
   statusText.textContent = "Loading hand and face models...";
@@ -59,8 +77,8 @@ async function start() {
     statusText.textContent = "Requesting camera permission...";
     stream = await navigator.mediaDevices.getUserMedia({
       video: {
-        width: { ideal: 960 },
-        height: { ideal: 540 },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
         facingMode: "user"
       },
       audio: false
@@ -68,9 +86,12 @@ async function start() {
 
     camera.srcObject = stream;
     await camera.play();
+    syncCanvasToVideo();
 
     emptyState.classList.add("is-hidden");
+    hideHint();
     stopButton.disabled = false;
+    waitingSince = performance.now();
     statusText.textContent = "Watching for the gesture.";
     animationId = requestAnimationFrame(processFrame);
   } catch (error) {
@@ -91,9 +112,11 @@ function stop() {
   stopGatoMode();
   stopStream();
   clearCanvas();
+  hideHint();
   waveHistory = [];
   lastVideoTime = -1;
   lastDanceTime = 0;
+  waitingSince = 0;
 
   startButton.disabled = false;
   stopButton.disabled = true;
@@ -166,7 +189,7 @@ function processFrame(timestamp) {
     const state = readGestureState(handResults, faceResults, timestamp);
 
     drawResults(handResults, state.nosePoint);
-    updateSignals(state);
+    updateSignals(state, timestamp);
 
     if (state.danceIsRecent) {
       startGatoMode();
@@ -261,13 +284,13 @@ function drawResults(handResults, nosePoint) {
   }
 }
 
-function updateSignals(state) {
+function updateSignals(state, now) {
   setSignal(faceSignal, state.faceCount ? "Seen" : "Missing", state.faceCount ? "is-active" : "");
   setSignal(handSignal, String(state.handCount), state.handCount >= 2 ? "is-active" : "");
 
   if (state.sidewaysWave) {
     setSignal(gestureSignal, "Wave", "is-hot");
-    statusText.textContent = "Gesture detected.";
+    statusText.textContent = "Gesture detected. Opening GATO MODE in a mini window.";
   } else if (state.hasNoseHand) {
     setSignal(gestureSignal, "Hold + wave", "is-active");
     statusText.textContent = "Keep waving the free hand side to side.";
@@ -277,36 +300,119 @@ function updateSignals(state) {
   }
 
   setSignal(modeSignal, state.danceIsRecent ? "GATO" : "Off", state.danceIsRecent ? "is-hot" : "");
+  updateHint(state, now);
 }
 
-function startGatoMode() {
-  if (gatoIsActive) {
+function updateHint(state, now) {
+  if (state.danceIsRecent) {
+    waitingSince = now;
+    hideHint();
     return;
   }
 
-  gatoIsActive = true;
-  gatoMode.classList.add("is-active");
-  gatoMode.setAttribute("aria-hidden", "false");
-  gatoVideo.currentTime = 0;
-  gatoAudio.currentTime = 0;
+  if (!waitingSince) {
+    waitingSince = now;
+  }
 
-  gatoVideo.play().catch(console.error);
-  gatoAudio.play().catch(() => {
-    statusText.textContent = "GATO MODE is active. Click the page once if Chrome blocks sound.";
-  });
+  if (now - waitingSince < HINT_DELAY_MS) {
+    hideHint();
+    return;
+  }
+
+  hintText.hidden = false;
+  hintText.textContent = getHint(state);
+}
+
+function getHint(state) {
+  if (!state.faceCount) {
+    return "Hint: move your face into the camera view first.";
+  }
+
+  if (state.handCount < 2) {
+    return "Hint: show both hands to the camera.";
+  }
+
+  if (!state.hasNoseHand) {
+    return "Hint: keep one hand close to your nose.";
+  }
+
+  return "Hint: keep that hand near your nose and wave the other hand wider, side to side.";
+}
+
+function hideHint() {
+  hintText.hidden = true;
+  hintText.textContent = "";
+}
+
+function startGatoMode() {
+  if (!gatoIsActive) {
+    gatoIsActive = true;
+    gatoAudio.currentTime = 0;
+    gatoAudio.play().catch(() => {
+      statusText.textContent = "GATO MODE is active. Click the page once if Chrome blocks sound.";
+    });
+  }
+
+  if (gatoWindowId === null && !gatoWindowOpening) {
+    openGatoWindow();
+  }
 }
 
 function stopGatoMode() {
-  if (!gatoIsActive) {
+  if (!gatoIsActive && gatoWindowId === null && !gatoWindowOpening) {
     return;
   }
 
   gatoIsActive = false;
-  gatoMode.classList.remove("is-active");
-  gatoMode.setAttribute("aria-hidden", "true");
-  gatoVideo.pause();
+  stopAudio();
+  closeGatoWindow();
+}
+
+function openGatoWindow() {
+  gatoWindowOpening = true;
+
+  chrome.windows.create({
+    url: chrome.runtime.getURL("extension/gato.html"),
+    type: "popup",
+    width: GATO_WINDOW_WIDTH,
+    height: GATO_WINDOW_HEIGHT,
+    focused: false
+  }, (createdWindow) => {
+    gatoWindowOpening = false;
+
+    if (chrome.runtime.lastError) {
+      statusText.textContent = "Gesture detected, but Chrome could not open the GATO mini window.";
+      return;
+    }
+
+    if (!gatoIsActive) {
+      chrome.windows.remove(createdWindow.id, () => {
+        void chrome.runtime.lastError;
+      });
+      return;
+    }
+
+    gatoWindowId = createdWindow.id;
+  });
+}
+
+function closeGatoWindow() {
+  if (gatoWindowId === null) {
+    gatoWindowOpening = false;
+    return;
+  }
+
+  const windowId = gatoWindowId;
+  gatoWindowId = null;
+  gatoWindowOpening = false;
+
+  chrome.windows.remove(windowId, () => {
+    void chrome.runtime.lastError;
+  });
+}
+
+function stopAudio() {
   gatoAudio.pause();
-  gatoVideo.currentTime = 0;
   gatoAudio.currentTime = 0;
 }
 
@@ -314,9 +420,14 @@ function syncCanvasToVideo() {
   const width = camera.videoWidth;
   const height = camera.videoHeight;
 
-  if (width && height && (overlay.width !== width || overlay.height !== height)) {
+  if (!width || !height) {
+    return;
+  }
+
+  if (overlay.width !== width || overlay.height !== height) {
     overlay.width = width;
     overlay.height = height;
+    videoFrame.style.setProperty("--video-aspect", String(width / height));
   }
 }
 

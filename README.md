@@ -11,6 +11,8 @@ Chrome extension webcam experiment: hold one hand near your nose and wave the ot
 5. Click the ScubaScubaa extension icon.
 6. Allow camera access, then do the gesture.
 
+The camera page shows the webcam at its normal aspect ratio. When the gesture is detected, GATO MODE opens in a small separate Chrome window and plays the video without cropping. If no gesture is detected after 7 seconds, the camera page shows a hint.
+
 The extension runs fully from local files. The MediaPipe browser runtime and models are vendored in `vendor/`.
 
 ## Files
