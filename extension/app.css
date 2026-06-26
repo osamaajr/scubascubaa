@@ -1,8 +1,11 @@
 :root {
-  color-scheme: dark;
-  --ink: #f4fffb;
-  --panel: rgba(0, 0, 0, 0.66);
-  --coral: #ff6b4a;
+  color-scheme: light;
+  --ink: #1d1d1f;
+  --muted: #68686d;
+  --panel: rgba(246, 246, 248, 0.92);
+  --glass: rgba(255, 255, 255, 0.74);
+  --line: rgba(60, 60, 67, 0.16);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
   --gold: #f7c948;
 }
 
@@ -12,28 +15,61 @@
 
 html,
 body {
-  width: 100%;
-  height: 100%;
+  width: 390px;
+  height: 500px;
 }
 
 body {
   margin: 0;
   overflow: hidden;
   color: var(--ink);
-  background: #000000;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #fbfbfd 0%, #f1f2f5 100%);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
 }
 
-.camera-shell {
+.drop-panel {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  background: var(--panel);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  color: var(--ink);
+  font-size: 0.92rem;
+  letter-spacing: -0.01em;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #34c759;
+  box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.16);
+}
+
+.camera-card {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
   background: #000000;
+  box-shadow: var(--shadow);
 }
 
 .camera,
-.overlay {
+.overlay,
+.gato-mode,
+.gato-mode video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -52,15 +88,17 @@ body {
 .message-text {
   position: absolute;
   left: 12px;
-  right: 48px;
+  right: 12px;
   bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  color: var(--ink);
-  background: var(--panel);
-  font-size: 0.88rem;
+  z-index: 2;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.58);
+  font-size: 0.84rem;
   line-height: 1.35;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(14px);
 }
 
 .message-text.is-hidden {
@@ -69,4 +107,18 @@ body {
 
 .message-text.is-hot {
   color: var(--gold);
+}
+
+.gato-mode {
+  z-index: 1;
+  display: none;
+  background: #000000;
+}
+
+.gato-mode.is-active {
+  display: block;
+}
+
+.gato-mode video {
+  object-fit: contain;
 }

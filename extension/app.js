@@ -15,6 +15,8 @@ const camera = document.querySelector("#camera");
 const overlay = document.querySelector("#overlay");
 const ctx = overlay.getContext("2d");
 const messageText = document.querySelector("#messageText");
+const gatoMode = document.querySelector("#gatoMode");
+const gatoVideo = document.querySelector("#gatoVideo");
 const gatoAudio = document.querySelector("#gatoAudio");
 
 let stream = null;
@@ -28,21 +30,12 @@ let waitingSince = 0;
 let gatoIsActive = false;
 let waveHistory = [];
 
-const HAND_CONNECTIONS = [
-  [0, 1], [1, 2], [2, 3], [3, 4],
-  [0, 5], [5, 6], [6, 7], [7, 8],
-  [5, 9], [9, 10], [10, 11], [11, 12],
-  [9, 13], [13, 14], [14, 15], [15, 16],
-  [13, 17], [17, 18], [18, 19], [19, 20],
-  [0, 17]
-];
-
 window.addEventListener("beforeunload", stop);
 
 start();
 
 async function start() {
-  showMessage("Loading...");
+  showMessage("Loading camera...");
 
   try {
     await loadModels();
@@ -62,7 +55,7 @@ async function start() {
     syncCanvasToVideo();
 
     waitingSince = performance.now();
-    showMessage("Hold one hand near your nose, then wave the other.", false, 2400);
+    showMessage("Hold one hand near your nose, then wave the other.", false, 2600);
     animationId = requestAnimationFrame(processFrame);
   } catch (error) {
     console.error(error);
@@ -146,7 +139,6 @@ function processFrame(timestamp) {
     const faceResults = faceLandmarker.detectForVideo(camera, timestamp);
     const state = readGestureState(handResults, faceResults, timestamp);
 
-    drawResults(handResults, state.nosePoint);
     updateGuidance(state, timestamp);
 
     if (state.danceIsRecent) {
@@ -207,39 +199,11 @@ function readGestureState(handResults, faceResults, now) {
   }
 
   return {
-    nosePoint,
     faceCount: faceLandmarks.length,
     handCount: handLandmarks.length,
     hasNoseHand,
-    sidewaysWave,
     danceIsRecent: lastDanceTime > 0 && now - lastDanceTime <= STOP_DELAY_MS
   };
-}
-
-function drawResults(handResults, nosePoint) {
-  clearCanvas();
-
-  for (const landmarks of handResults.landmarks ?? []) {
-    const points = landmarks.map(toCanvasPoint);
-
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.84)";
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-
-    for (const [start, end] of HAND_CONNECTIONS) {
-      drawLine(points[start], points[end]);
-    }
-
-    ctx.fillStyle = "#ff6b4a";
-    for (const point of points) {
-      drawCircle(point, 4);
-    }
-  }
-
-  if (nosePoint) {
-    ctx.fillStyle = "#f7c948";
-    drawCircle(nosePoint, 7);
-  }
 }
 
 function updateGuidance(state, now) {
@@ -253,11 +217,9 @@ function updateGuidance(state, now) {
     waitingSince = now;
   }
 
-  if (now - waitingSince < HINT_DELAY_MS) {
-    return;
+  if (now - waitingSince >= HINT_DELAY_MS) {
+    showMessage(getHint(state));
   }
-
-  showMessage(getHint(state));
 }
 
 function getHint(state) {
@@ -282,8 +244,12 @@ function startGatoMode() {
   }
 
   gatoIsActive = true;
-  postGatoMessage("gato:start");
+  gatoMode.classList.add("is-active");
+  gatoMode.setAttribute("aria-hidden", "false");
+  gatoVideo.currentTime = 0;
   gatoAudio.currentTime = 0;
+
+  gatoVideo.play().catch(console.error);
   gatoAudio.play().catch(() => {
     showMessage("GATO MODE. Click once if Chrome blocks sound.", true);
   });
@@ -295,16 +261,12 @@ function stopGatoMode() {
   }
 
   gatoIsActive = false;
-  postGatoMessage("gato:stop");
+  gatoMode.classList.remove("is-active");
+  gatoMode.setAttribute("aria-hidden", "true");
+  gatoVideo.pause();
   gatoAudio.pause();
+  gatoVideo.currentTime = 0;
   gatoAudio.currentTime = 0;
-}
-
-function postGatoMessage(type) {
-  window.parent.postMessage({
-    source: "scubascubaa",
-    type
-  }, "*");
 }
 
 function syncCanvasToVideo() {
@@ -337,19 +299,6 @@ function averagePoint(...points) {
 
 function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function drawLine(a, b) {
-  ctx.beginPath();
-  ctx.moveTo(a.x, a.y);
-  ctx.lineTo(b.x, b.y);
-  ctx.stroke();
-}
-
-function drawCircle(point, radius) {
-  ctx.beginPath();
-  ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-  ctx.fill();
 }
 
 function clearCanvas() {

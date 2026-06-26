@@ -4,36 +4,10 @@
   "version": "1.0.0",
   "description": "Trigger GATO MODE from your webcam with a nose-hold and side-wave gesture.",
   "action": {
-    "default_title": "Toggle ScubaScubaa overlay"
+    "default_title": "Open ScubaScubaa",
+    "default_popup": "extension/app.html"
   },
-  "background": {
-    "service_worker": "background.js"
-  },
-  "permissions": [
-    "activeTab",
-    "scripting"
-  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "audio.mp3",
-        "gato.mp4",
-        "extension/app.css",
-        "extension/app.html",
-        "extension/app.js",
-        "extension/gato.css",
-        "extension/gato.html",
-        "extension/gato.js",
-        "vendor/mediapipe/models/*",
-        "vendor/mediapipe/tasks-vision/*",
-        "vendor/mediapipe/tasks-vision/wasm/*"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ]
+  }
 }
