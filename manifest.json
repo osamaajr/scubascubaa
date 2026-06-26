@@ -4,12 +4,26 @@
   "version": "1.0.0",
   "description": "Trigger GATO MODE from your webcam with a nose-hold and side-wave gesture.",
   "action": {
-    "default_title": "Open ScubaScubaa"
+    "default_title": "Toggle ScubaScubaa camera"
   },
   "background": {
     "service_worker": "background.js"
   },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "extension/app.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }

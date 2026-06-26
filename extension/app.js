@@ -134,7 +134,7 @@ async function loadModels() {
   }
 
   loadPromise = (async () => {
-    const wasmPath = chrome.runtime.getURL("vendor/mediapipe/tasks-vision/wasm");
+    const wasmPath = `${chrome.runtime.getURL("vendor/mediapipe/tasks-vision/wasm")}/`;
     const vision = await FilesetResolver.forVisionTasks(wasmPath);
 
     handLandmarker = await HandLandmarker.createFromOptions(vision, {
@@ -493,3 +493,5 @@ function makeErrorMessage(error) {
 
   return "Could not start ScubaScubaa. Check the extension console for details.";
 }
+
+start();

@@ -33,7 +33,7 @@ body {
 button {
   border: 0;
   border-radius: 8px;
-  padding: 11px 15px;
+  padding: 9px 12px;
   color: #ffffff;
   background: var(--teal);
   font: inherit;
@@ -64,17 +64,17 @@ button.secondary:hover:not(:disabled) {
 .app-shell {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 14px;
+  gap: 10px;
   min-height: 100vh;
-  padding: 14px;
+  padding: 10px;
 }
 
 .top-bar {
   display: grid;
-  grid-template-columns: minmax(150px, auto) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(104px, auto) minmax(160px, 1fr) auto;
   align-items: center;
-  gap: 14px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px 40px 10px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.92);
@@ -84,7 +84,7 @@ button.secondary:hover:not(:disabled) {
 .eyebrow {
   margin: 0 0 2px;
   color: var(--coral);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 850;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -92,23 +92,24 @@ button.secondary:hover:not(:disabled) {
 
 h1 {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.12rem;
   line-height: 1;
 }
 
 .status-text {
-  min-height: 42px;
+  min-height: 38px;
   margin: 0;
-  padding: 10px 12px;
+  padding: 9px 10px;
   border-radius: 8px;
   color: var(--teal-dark);
   background: #eaf8f4;
+  font-size: 0.9rem;
   line-height: 1.35;
 }
 
 .button-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .stage {
@@ -120,8 +121,8 @@ h1 {
 
 .video-frame {
   position: relative;
-  width: min(100%, calc((100vh - 112px) * var(--video-aspect)));
-  max-height: calc(100vh - 112px);
+  width: min(100%, calc((100vh - 92px) * var(--video-aspect)));
+  max-height: calc(100vh - 92px);
   aspect-ratio: var(--video-aspect);
   overflow: hidden;
   border: 1px solid var(--line);
@@ -217,11 +218,12 @@ h1 {
 
 @media (max-width: 760px) {
   .app-shell {
-    padding: 10px;
+    padding: 8px;
   }
 
   .top-bar {
     grid-template-columns: 1fr;
+    padding-right: 40px;
   }
 
   .button-row {
@@ -231,6 +233,6 @@ h1 {
 
   .video-frame {
     width: 100%;
-    max-height: calc(100vh - 210px);
+    max-height: calc(100vh - 204px);
   }
 }
