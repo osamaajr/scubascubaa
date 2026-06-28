@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>scuba Privacy Policy</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f5f7;
+        --card: rgba(255, 255, 255, 0.86);
+        --ink: #1d1d1f;
+        --muted: #66666b;
+        --line: rgba(60, 60, 67, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(90, 200, 250, 0.28), transparent 32rem),
+          radial-gradient(circle at top right, rgba(255, 214, 10, 0.24), transparent 30rem),
+          var(--bg);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        width: min(760px, calc(100% - 32px));
+        margin: 56px auto;
+        padding: 38px;
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        background: var(--card);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.12);
+        backdrop-filter: blur(18px);
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: clamp(2.1rem, 5vw, 3.8rem);
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+
+      h2 {
+        margin: 30px 0 8px;
+        font-size: 1.05rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+      }
+
+      .updated {
+        margin-top: 0;
+        color: #86868b;
+      }
+
+      ul {
+        padding-left: 1.2rem;
+      }
+
+      a {
+        color: #0066cc;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>scuba Privacy Policy</h1>
+      <p class="updated">Last updated: June 28, 2026</p>
+
+      <p>scuba is a Chrome extension that detects a simple webcam gesture and plays a local GATO MODE video while the gesture is active.</p>
+
+      <h2>Data Collection</h2>
+      <p>scuba does not collect, store, sell, or share personal data. The extension does not upload camera video, images, audio, or gesture data to any server.</p>
+
+      <h2>Camera Use</h2>
+      <p>scuba uses your camera only inside the extension popup to detect face and hand landmarks for the gesture. Camera frames are processed locally in Chrome and are not saved.</p>
+
+      <h2>Remote Code</h2>
+      <p>scuba does not fetch or execute remote code. JavaScript, WebAssembly, MediaPipe models, video, audio, and image assets are packaged with the extension and run locally.</p>
+
+      <h2>Third Parties</h2>
+      <p>scuba does not share user data with third parties.</p>
+
+      <h2>Contact</h2>
+      <p>For privacy questions, contact the publisher using the contact email listed on the Chrome Web Store listing.</p>
+    </main>
+  </body>
+</html>
